@@ -1,0 +1,29 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AnalogClockAvalonia.ViewModels"
+             xmlns:controls="using:AnalogClockAvalonia.Controls"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="AnalogClockAvalonia.Views.MainView"
+             x:DataType="vm:MainViewModel">
+  <Design.DataContext>
+    <vm:MainViewModel />
+  </Design.DataContext>
+
+  <Grid Background="#232323" RowDefinitions="*,Auto">
+    <Viewbox Grid.Row="0">
+      <Border BorderThickness="1" BorderBrush="Black" Width="100" Height="100">
+        <controls:AnalogClockControl 
+          Time="{Binding CurrentTime}" 
+          IsRunning="{Binding IsRunning}"
+          IsDiscrete="{Binding IsDiscrete}" />
+      </Border>
+    </Viewbox>
+
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="10">
+      <CheckBox IsChecked="{Binding IsRunning}" Content="Running" />
+      <CheckBox IsChecked="{Binding IsDiscrete}" Content="Discrete" />
+    </StackPanel>
+  </Grid>
+</UserControl>

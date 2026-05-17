@@ -1,0 +1,14 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AnalogClockAvalonia.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="using:AnalogClockAvalonia.Views"
+        mc:Ignorable="d" d:DesignWidth="525" d:DesignHeight="350"
+        x:Class="AnalogClockAvalonia.Views.MainWindow"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Analog Clock Demo"
+        Width="525"
+        Height="350">
+        <views:MainView />
+</Window>

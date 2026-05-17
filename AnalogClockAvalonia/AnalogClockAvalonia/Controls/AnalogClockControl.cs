@@ -1,0 +1,256 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Media;
+using Avalonia.Media.TextFormatting;
+using Avalonia.Threading;
+using System;
+
+namespace AnalogClockAvalonia.Controls
+{
+    /// <summary>
+    /// An Avalonia analog clock control that displays time with hour, minute, and second hands.
+    /// </summary>
+    public class AnalogClockControl : Control
+    {
+        private DispatcherTimer? _timer;
+        private TimeOnly _lastTick = TimeOnly.FromDateTime(DateTime.Now);
+        private const double ClockRadius = 50;
+        private const double CenterX = 50;
+        private const double CenterY = 50;
+        private const double NumeralRadius = 36;
+
+        public static readonly StyledProperty<TimeOnly> TimeProperty =
+            AvaloniaProperty.Register<AnalogClockControl, TimeOnly>(
+                nameof(Time), defaultValue: TimeOnly.FromDateTime(DateTime.Now));
+
+        public static readonly StyledProperty<bool> IsRunningProperty =
+            AvaloniaProperty.Register<AnalogClockControl, bool>(
+                nameof(IsRunning), defaultValue: true);
+
+        public static readonly StyledProperty<bool> IsDiscreteProperty =
+            AvaloniaProperty.Register<AnalogClockControl, bool>(
+                nameof(IsDiscrete), defaultValue: true);
+
+        /// <summary>
+        /// Gets or sets the time displayed on the clock.
+        /// </summary>
+        public TimeOnly Time
+        {
+            get => GetValue(TimeProperty);
+            set => SetValue(TimeProperty, value);
+        }
+
+        public bool IsRunning
+        {
+            get => GetValue(IsRunningProperty);
+            set => SetValue(IsRunningProperty, value);
+        }
+
+        public bool IsDiscrete
+        {
+            get => GetValue(IsDiscreteProperty);
+            set => SetValue(IsDiscreteProperty, value);
+        }
+
+        public AnalogClockControl()
+        {
+            Width = 100;
+            Height = 100;
+
+            TimeProperty.Changed.AddClassHandler<AnalogClockControl>(
+                (s, e) => s.InvalidateVisual());
+
+            IsRunningProperty.Changed.AddClassHandler<AnalogClockControl>(
+                (s, e) => s.OnIsRunningChanged((bool)e.NewValue!));
+
+            Loaded += (s, e) =>
+            {
+                InitTimer(IsRunning);
+                InvalidateVisual();
+            };
+        }
+
+        private void OnIsRunningChanged(bool isRunning)
+        {
+            InitTimer(isRunning);
+        }
+
+        private void InitTimer(bool create)
+        {
+            if (create && _timer == null)
+            {
+                _timer = new DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(10)
+                };
+                _timer.Tick += Timer_Tick;
+                _timer.Start();
+            }
+            else if (!create && _timer != null)
+            {
+                _timer.Stop();
+                _timer.Tick -= Timer_Tick;
+                _timer = null;
+            }
+        }
+
+        private void Timer_Tick(object? sender, EventArgs e)
+        {
+            var now = TimeOnly.FromDateTime(DateTime.Now);
+            if (!IsDiscrete || now.Second != _lastTick.Second)
+            {
+                UpdateTime(now);
+            }
+        }
+
+        private void UpdateTime(TimeOnly newVal)
+        {
+            _lastTick = newVal;
+            // TimeOnly не имеет миллисекунд в публичном API для конструктора,
+            // поэтому просто обрезаем до секунд при дискретном режиме
+            Time = newVal;
+        }
+
+        public override void Render(DrawingContext context)
+        {
+            base.Render(context);
+
+            // Draw outer circle
+            context.DrawEllipse(
+                new SolidColorBrush(Colors.White),
+                new Pen(new SolidColorBrush(Colors.Black), 5),
+                new Point(CenterX, CenterY),
+                ClockRadius - 2.5,
+                ClockRadius - 2.5);
+
+            DrawTickMarks(context);
+            DrawNumerals(context);
+            DrawClockHands(context);
+
+            // Draw center circle
+            context.DrawEllipse(
+                new SolidColorBrush(Colors.Black),
+                null,
+                new Point(CenterX, CenterY),
+                2,
+                2);
+        }
+
+        private void DrawTickMarks(DrawingContext context)
+        {
+            var pen = new Pen(new SolidColorBrush(Colors.Black), 1);
+            var majorPen = new Pen(new SolidColorBrush(Colors.Black), 3);
+
+            for (int i = 0; i < 60; i++)
+            {
+                double angle = (i * 6) - 90;
+                double radians = angle * Math.PI / 180;
+
+                if (i % 5 == 0)
+                {
+                    // Major tick mark (hour)
+                    double x1 = CenterX + (ClockRadius - 10) * Math.Cos(radians);
+                    double y1 = CenterY + (ClockRadius - 10) * Math.Sin(radians);
+                    double x2 = CenterX + (ClockRadius - 2.5) * Math.Cos(radians);
+                    double y2 = CenterY + (ClockRadius - 2.5) * Math.Sin(radians);
+                    context.DrawLine(majorPen, new Point(x1, y1), new Point(x2, y2));
+                }
+                else
+                {
+                    // Minor tick mark (minute)
+                    double x1 = CenterX + (ClockRadius - 8) * Math.Cos(radians);
+                    double y1 = CenterY + (ClockRadius - 8) * Math.Sin(radians);
+                    double x2 = CenterX + (ClockRadius - 2.5) * Math.Cos(radians);
+                    double y2 = CenterY + (ClockRadius - 2.5) * Math.Sin(radians);
+                    context.DrawLine(pen, new Point(x1, y1), new Point(x2, y2));
+                }
+            }
+        }
+
+        private void DrawNumerals(DrawingContext context)
+        {
+            var brush = new SolidColorBrush(Colors.DarkRed);
+            var typeface = new Typeface("Arial");
+
+            for (int i = 1; i <= 12; i++)
+            {
+                double angle = (i * 30) - 90;
+                double radians = angle * Math.PI / 180;
+
+                double x = CenterX + NumeralRadius * Math.Cos(radians);
+                double y = CenterY + NumeralRadius * Math.Sin(radians);
+
+                var text = new FormattedText(
+                    i.ToString(),
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    FlowDirection.LeftToRight,
+                    typeface,
+                    12,
+                    brush);
+
+                context.DrawText(text, new Point(x - text.Width / 2, y - text.Height / 2));
+            }
+        }
+
+        private void DrawClockHands(DrawingContext context)
+        {
+            var time = Time;
+
+            // Hour hand: 30° per hour + 0.5° per minute
+            double hourAngle = (time.Hour % 12 * 30 + time.Minute * 0.5) - 90;
+            DrawPointedHand(context, hourAngle, 25, 5, Colors.Black);
+
+            // Minute hand: 6° per minute + 0.1° per second
+            double minuteAngle = (time.Minute * 6 + time.Second * 0.1) - 90;
+            DrawPointedHand(context, minuteAngle, 36, 4, Colors.DarkGray);
+
+            // Second hand: 6° per second (+ плавное движение, если нужно)
+            double secondAngle = (time.Second * 6) - 90;
+            DrawPointedHand(context, secondAngle, 40, 1.5, Colors.Red);
+        }
+
+        private void DrawPointedHand(DrawingContext context, double angle, double length, double thickness, Color color)
+        {
+            double radians = angle * Math.PI / 180;
+            double halfWidth = thickness / 2;
+            double perpRadians = radians + Math.PI / 2;
+
+            double tipX = CenterX + length * Math.Cos(radians);
+            double tipY = CenterY + length * Math.Sin(radians);
+
+            double taperStart = length * 0.9;
+            double taperX = CenterX + taperStart * Math.Cos(radians);
+            double taperY = CenterY + taperStart * Math.Sin(radians);
+
+            double backLength = 5;
+            double backX = CenterX - backLength * Math.Cos(radians);
+            double backY = CenterY - backLength * Math.Sin(radians);
+
+            var points = new Points
+            {
+                new Point(backX + halfWidth * Math.Cos(perpRadians), backY + halfWidth * Math.Sin(perpRadians)),
+                new Point(taperX + halfWidth * Math.Cos(perpRadians), taperY + halfWidth * Math.Sin(perpRadians)),
+                new Point(tipX, tipY),
+                new Point(taperX - halfWidth * Math.Cos(perpRadians), taperY - halfWidth * Math.Sin(perpRadians)),
+                new Point(backX - halfWidth * Math.Cos(perpRadians), backY - halfWidth * Math.Sin(perpRadians))
+            };
+
+            var geometry = new PolylineGeometry(points, true);
+
+            context.DrawGeometry(
+                new SolidColorBrush(color),
+                new Pen(new SolidColorBrush(color), 0.5),
+                geometry);
+        }
+
+        protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+            if (change.Property == TimeProperty ||
+                change.Property == IsRunningProperty)
+            {
+                InvalidateVisual();
+            }
+        }
+    }
+}
