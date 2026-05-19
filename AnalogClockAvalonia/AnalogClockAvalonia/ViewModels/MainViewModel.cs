@@ -1,4 +1,3 @@
-﻿
 using ReactiveUI;
 using System;
 
@@ -6,11 +5,11 @@ namespace AnalogClockAvalonia.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
-        private DateTime _currentTime;
+        private TimeOnly _currentTime;
         private bool _isRunning;
         private bool _isDiscrete;
 
-        public DateTime CurrentTime
+        public TimeOnly CurrentTime
         {
             get => _currentTime;
             set => this.RaiseAndSetIfChanged(ref _currentTime, value);
@@ -30,7 +29,7 @@ namespace AnalogClockAvalonia.ViewModels
 
         public MainViewModel()
         {
-            _currentTime = DateTime.Now;
+            _currentTime = new TimeOnly(10, 30, 0);
             _isRunning = true;
             _isDiscrete = true;
         }

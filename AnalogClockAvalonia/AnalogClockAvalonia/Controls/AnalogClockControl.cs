@@ -13,7 +13,9 @@ namespace AnalogClockAvalonia.Controls
     public class AnalogClockControl : Control
     {
         private DispatcherTimer? _timer;
-        private TimeOnly _lastTick = TimeOnly.FromDateTime(DateTime.Now);
+        private TimeOnly _baseTime;
+        private DateTime _baseDateTime;
+        private TimeOnly _lastDisplayedTime;
         private const double ClockRadius = 50;
         private const double CenterX = 50;
         private const double CenterY = 50;
@@ -33,6 +35,8 @@ namespace AnalogClockAvalonia.Controls
 
         /// <summary>
         /// Gets or sets the time displayed on the clock.
+        /// When IsRunning is true, the clock continues from this time.
+        /// When IsRunning is false, the clock displays this time.
         /// </summary>
         public TimeOnly Time
         {
@@ -57,11 +61,31 @@ namespace AnalogClockAvalonia.Controls
             Width = 100;
             Height = 100;
 
+            _baseTime = TimeOnly.FromDateTime(DateTime.Now);
+            _baseDateTime = DateTime.Now;
+            _lastDisplayedTime = _baseTime;
+
             TimeProperty.Changed.AddClassHandler<AnalogClockControl>(
-                (s, e) => s.InvalidateVisual());
+                (s, e) => {
+                    var newTime = (TimeOnly)e.NewValue!;
+                    // When Time property changes, reset the base time
+                    s._baseTime = newTime;
+                    s._baseDateTime = DateTime.Now;
+                    s._lastDisplayedTime = newTime;
+                    s.InvalidateVisual();
+                });
 
             IsRunningProperty.Changed.AddClassHandler<AnalogClockControl>(
-                (s, e) => s.OnIsRunningChanged((bool)e.NewValue!));
+                (s, e) => {
+                    // When IsRunning changes, update the base DateTime to keep time continuous
+                    s._baseDateTime = DateTime.Now;
+                    s.OnIsRunningChanged((bool)e.NewValue!);
+                });
+
+            IsDiscreteProperty.Changed.AddClassHandler<AnalogClockControl>(
+                (s, e) => {
+                    s.InvalidateVisual();
+                });
 
             Loaded += (s, e) =>
             {
@@ -96,19 +120,35 @@ namespace AnalogClockAvalonia.Controls
 
         private void Timer_Tick(object? sender, EventArgs e)
         {
-            var now = TimeOnly.FromDateTime(DateTime.Now);
-            if (!IsDiscrete || now.Second != _lastTick.Second)
-            {
-                UpdateTime(now);
-            }
-        }
+            if (!IsRunning)
+                return;
 
-        private void UpdateTime(TimeOnly newVal)
-        {
-            _lastTick = newVal;
-            // TimeOnly не имеет миллисекунд в публичном API для конструктора,
-            // поэтому просто обрезаем до секунд при дискретном режиме
-            Time = newVal;
+            // Calculate elapsed time since we set the base time
+            var elapsed = DateTime.Now - _baseDateTime;
+            var newTime = _baseTime.Add(elapsed);
+
+            // Handle day overflow
+            while (newTime.Ticks >= TimeSpan.TicksPerDay)
+            {
+                newTime = new TimeOnly(newTime.Ticks - TimeSpan.TicksPerDay);
+            }
+
+            // In discrete mode, only update when seconds change
+            if (IsDiscrete)
+            {
+                var discreteTime = new TimeOnly(newTime.Hour, newTime.Minute, newTime.Second);
+                if (discreteTime.Second != _lastDisplayedTime.Second)
+                {
+                    Time = discreteTime;
+                    _lastDisplayedTime = discreteTime;
+                }
+            }
+            else
+            {
+                // In continuous mode, update every timer tick
+                Time = newTime;
+                _lastDisplayedTime = newTime;
+            }
         }
 
         public override void Render(DrawingContext context)
@@ -204,7 +244,7 @@ namespace AnalogClockAvalonia.Controls
             double minuteAngle = (time.Minute * 6 + time.Second * 0.1) - 90;
             DrawPointedHand(context, minuteAngle, 36, 4, Colors.DarkGray);
 
-            // Second hand: 6° per second (+ плавное движение, если нужно)
+            // Second hand: 6° per second
             double secondAngle = (time.Second * 6) - 90;
             DrawPointedHand(context, secondAngle, 40, 1.5, Colors.Red);
         }
@@ -247,7 +287,8 @@ namespace AnalogClockAvalonia.Controls
         {
             base.OnPropertyChanged(change);
             if (change.Property == TimeProperty ||
-                change.Property == IsRunningProperty)
+                change.Property == IsRunningProperty ||
+                change.Property == IsDiscreteProperty)
             {
                 InvalidateVisual();
             }
