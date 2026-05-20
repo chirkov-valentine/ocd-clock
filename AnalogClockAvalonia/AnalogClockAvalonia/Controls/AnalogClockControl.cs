@@ -125,19 +125,27 @@ namespace AnalogClockAvalonia.Controls
 
             // Calculate elapsed time since we set the base time
             var elapsed = DateTime.Now - _baseDateTime;
-            var fullDateTime = _baseDateTime.Add(elapsed);
-            var newTime = TimeOnly.FromDateTime(fullDateTime);
+            var newTime = _baseTime.Add(elapsed);
 
             // Handle day overflow
-            if (newTime < _baseTime && _baseDateTime.AddHours(12) < DateTime.Now)
+            while (newTime.Ticks >= TimeSpan.TicksPerDay)
             {
-                newTime = TimeOnly.FromDateTime(fullDateTime.AddDays(-1));
+                newTime = new TimeOnly(newTime.Ticks - TimeSpan.TicksPerDay);
             }
 
-            // If not discrete (continuous mode), always update
-            // If discrete, only update when seconds change
-            if (!IsDiscrete || newTime.Second != _lastDisplayedTime.Second)
+            // In discrete mode, only update when seconds change
+            if (IsDiscrete)
             {
+                var discreteTime = new TimeOnly(newTime.Hour, newTime.Minute, newTime.Second);
+                if (discreteTime.Second != _lastDisplayedTime.Second)
+                {
+                    Time = discreteTime;
+                    _lastDisplayedTime = discreteTime;
+                }
+            }
+            else
+            {
+                // In continuous mode, update every timer tick
                 Time = newTime;
                 _lastDisplayedTime = newTime;
             }
@@ -226,9 +234,7 @@ namespace AnalogClockAvalonia.Controls
 
         private void DrawClockHands(DrawingContext context)
         {
-            var currentDateTime = _baseDateTime.Add(DateTime.Now - _baseDateTime);
-            var time = TimeOnly.FromDateTime(currentDateTime);
-            int milliseconds = currentDateTime.Millisecond;
+            var time = Time;
 
             // Hour hand: 30° per hour + 0.5° per minute
             double hourAngle = (time.Hour % 12 * 30 + time.Minute * 0.5) - 90;
@@ -238,18 +244,8 @@ namespace AnalogClockAvalonia.Controls
             double minuteAngle = (time.Minute * 6 + time.Second * 0.1) - 90;
             DrawPointedHand(context, minuteAngle, 36, 4, Colors.DarkGray);
 
-            // Second hand: 6° per second + 0.006° per millisecond (smooth movement)
-            // In discrete mode, only show second without milliseconds
-            double secondAngle;
-            if (IsDiscrete)
-            {
-                secondAngle = (time.Second * 6) - 90;
-            }
-            else
-            {
-                // Include milliseconds for smooth continuous movement
-                secondAngle = (time.Second * 6 + (milliseconds * 0.006)) - 90;
-            }
+            // Second hand: 6° per second
+            double secondAngle = (time.Second * 6) - 90;
             DrawPointedHand(context, secondAngle, 40, 1.5, Colors.Red);
         }
 
