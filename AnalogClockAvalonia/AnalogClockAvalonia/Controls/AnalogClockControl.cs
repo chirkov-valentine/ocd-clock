@@ -235,6 +235,7 @@ namespace AnalogClockAvalonia.Controls
         private void DrawClockHands(DrawingContext context)
         {
             var time = Time;
+            int milliseconds = time.Millisecond;
 
             // Hour hand: 30° per hour + 0.5° per minute
             double hourAngle = (time.Hour % 12 * 30 + time.Minute * 0.5) - 90;
@@ -245,7 +246,16 @@ namespace AnalogClockAvalonia.Controls
             DrawPointedHand(context, minuteAngle, 36, 4, Colors.DarkGray);
 
             // Second hand: 6° per second
-            double secondAngle = (time.Second * 6) - 90;
+            double secondAngle;
+            if (IsDiscrete)
+            {
+                secondAngle = (time.Second * 6) - 90;
+            }
+            else
+            {
+                // Include milliseconds for smooth continuous movement
+                secondAngle = (time.Second * 6 + (milliseconds * 0.006)) - 90;
+            }
             DrawPointedHand(context, secondAngle, 40, 1.5, Colors.Red);
         }
 
