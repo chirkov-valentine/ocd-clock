@@ -155,9 +155,17 @@ namespace AnalogClockAvalonia.Controls
         {
             base.Render(context);
 
-            // Draw outer circle
+            // Draw clock face with radial gradient brush (like WPF)
+            var gradientStops = new GradientStops
+     {
+         new GradientStop(Colors.White, 0),
+         new GradientStop(Color.FromRgb(255, 255, 239), 0.65),
+         new GradientStop(Color.FromRgb(188, 188, 172), 1)
+     };
+            var radialGradient = new RadialGradientBrush { GradientStops = gradientStops };
+
             context.DrawEllipse(
-                new SolidColorBrush(Colors.White),
+                radialGradient,
                 new Pen(new SolidColorBrush(Colors.Black), 5),
                 new Point(CenterX, CenterY),
                 ClockRadius - 2.5,
