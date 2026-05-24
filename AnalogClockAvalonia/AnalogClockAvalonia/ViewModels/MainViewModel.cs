@@ -8,7 +8,6 @@ namespace AnalogClockAvalonia.ViewModels
         private TimeOnly _currentTime;
         private bool _isRunning;
         private bool _isDiscrete;
-        private TimeOnly _lastDisplayedTime;
 
         public TimeOnly CurrentTime
         {
@@ -33,16 +32,6 @@ namespace AnalogClockAvalonia.ViewModels
             _currentTime = new TimeOnly(10, 30, 0);
             _isRunning = true;
             _isDiscrete = true;
-            _lastDisplayedTime = TimeOnly.MinValue;
-        }
-
-        public void UpdateTime(TimeOnly newTime)
-        {
-            if (!IsDiscrete || newTime.Second != _lastDisplayedTime.Second)
-            {
-                CurrentTime = newTime;
-                _lastDisplayedTime = newTime;
-            }
         }
     }
 }

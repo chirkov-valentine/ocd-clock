@@ -11,14 +11,12 @@
     <vm:MainViewModel />
   </Design.DataContext>
 
-  <Grid Background="#232323" RowDefinitions="*,Auto">
+  <Grid Background="White" RowDefinitions="*,Auto">
     <Viewbox Grid.Row="0">
-      <Border BorderThickness="1" BorderBrush="Black" Width="100" Height="100">
         <controls:AnalogClockControl 
           Time="{Binding CurrentTime}" 
           IsRunning="{Binding IsRunning}"
           IsDiscrete="{Binding IsDiscrete}" />
-      </Border>
     </Viewbox>
 
     <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="10">

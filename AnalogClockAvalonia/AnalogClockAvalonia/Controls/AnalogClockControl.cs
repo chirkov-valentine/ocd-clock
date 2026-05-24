@@ -222,7 +222,7 @@ namespace AnalogClockAvalonia.Controls
             const double fontSize = 12;
 
             // Subtle offset to prevent numerals from slightly overlapping tick marks
-            double innerOffset = (38 - NumeralRadius) + 1;
+            double innerOffset = (41 - NumeralRadius) + 1;
             double innerCircleDiameter = NumeralRadius * 2;
 
             for (int i = 1; i <= 12; i++)
@@ -243,7 +243,7 @@ namespace AnalogClockAvalonia.Controls
                     brush);
 
                 // Subtle adjustment - only 0.25 of the interpolation factor for minimal shift
-                double adjustFactor = 0.25;
+                double adjustFactor = 0.23;
                 double adjustedX = pt.X - ((pt.X - innerOffset) / innerCircleDiameter) * text.Width * adjustFactor;
                 double adjustedY = pt.Y + (1.0 - ((pt.Y - innerOffset) / innerCircleDiameter)) * text.Height * adjustFactor;
 
