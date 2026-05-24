@@ -222,7 +222,7 @@ namespace AnalogClockAvalonia.Controls
             const double fontSize = 12;
 
             // Subtle offset to prevent numerals from slightly overlapping tick marks
-            double innerOffset = (48 - NumeralRadius) + 1;
+            double innerOffset = (38 - NumeralRadius) + 1;
             double innerCircleDiameter = NumeralRadius * 2;
 
             for (int i = 1; i <= 12; i++)
