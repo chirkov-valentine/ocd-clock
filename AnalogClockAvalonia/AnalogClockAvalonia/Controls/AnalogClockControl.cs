@@ -219,24 +219,36 @@ namespace AnalogClockAvalonia.Controls
         {
             var brush = new SolidColorBrush(Colors.DarkRed);
             var typeface = new Typeface("Arial");
+            const double fontSize = 12;
+
+            // Subtle offset to prevent numerals from slightly overlapping tick marks
+            double innerOffset = (48 - NumeralRadius) + 1;
+            double innerCircleDiameter = NumeralRadius * 2;
 
             for (int i = 1; i <= 12; i++)
             {
+                // Get the base position on the numeral circle
                 double angle = (i * 30) - 90;
                 double radians = angle * Math.PI / 180;
+                Point pt = new Point(CenterX + NumeralRadius * Math.Cos(radians), 
+                                    CenterY + NumeralRadius * Math.Sin(radians));
 
-                double x = CenterX + NumeralRadius * Math.Cos(radians);
-                double y = CenterY + NumeralRadius * Math.Sin(radians);
-
+                // Create the text
                 var text = new FormattedText(
                     i.ToString(),
                     System.Globalization.CultureInfo.InvariantCulture,
                     FlowDirection.LeftToRight,
                     typeface,
-                    12,
+                    fontSize,
                     brush);
 
-                context.DrawText(text, new Point(x - text.Width / 2, y - text.Height / 2));
+                // Subtle adjustment - only 0.25 of the interpolation factor for minimal shift
+                double adjustFactor = 0.25;
+                double adjustedX = pt.X - ((pt.X - innerOffset) / innerCircleDiameter) * text.Width * adjustFactor;
+                double adjustedY = pt.Y + (1.0 - ((pt.Y - innerOffset) / innerCircleDiameter)) * text.Height * adjustFactor;
+
+                // Draw text centered at adjusted position
+                context.DrawText(text, new Point(adjustedX - text.Width / 2, adjustedY - text.Height / 2));
             }
         }
 
